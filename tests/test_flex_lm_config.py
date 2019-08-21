@@ -11,10 +11,10 @@ r"""
 # Comment line 2
 
 # Comment line 3
+SERVER my_server 17007ea8 1700
 """
 
 """
-SERVER my_server 17007ea8 1700
 VENDOR sampled
 FEATURE f1 sampled 1.000 01-jan-2005 10 SIGN=9BFAC0316462
 FEATURE f2 sampled 1.000 01-jan-2005 10 SIGN=1B9A308CC0F7
