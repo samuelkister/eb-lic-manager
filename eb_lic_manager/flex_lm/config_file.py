@@ -2,20 +2,14 @@
 
 from lark import Lark, Transformer, v_args
 config_grammar = r"""
-    start: config
-
-    config: _EMPTY_LINE* | comments server
+    start: _EMPTY_LINE* | _COMMENT*
     
-    _EMPTY_LINE: /^/ WS* NEWLINE
+    _EMPTY_LINE: /^[\t ]*\n/
     
-    COMMENT: /#.*/ NEWLINE
-    comments: COMMENT*
+    _COMMENT: "#" /[^\n]*/
     
-    server: "SERVER "i server_name server_id server_port NEWLINE
-    server_name: /(\w)+/
-    server_id: /(\w)+/
-    server_port: INT
-    
+    %ignore _EMPTY_LINE
+    %ignore _COMMENT
     %ignore NEWLINE
     %ignore WS
     
@@ -24,8 +18,6 @@ config_grammar = r"""
     %import common.WORD
     %import common.INT
 """
-
-
 
 config_parser = Lark(config_grammar)
 parse = config_parser.parse

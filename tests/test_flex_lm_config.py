@@ -5,30 +5,43 @@ import eb_lic_manager.flex_lm.config_file as p
 
 logging.basicConfig(level=logging.INFO)
 
-sample_config = \
-r"""
-# Comment line 1
-# Comment line 2
-
-# Comment line 3
-SERVER my_server 17007ea8 1700
-"""
-
-"""
-VENDOR sampled
-FEATURE f1 sampled 1.000 01-jan-2005 10 SIGN=9BFAC0316462
-FEATURE f2 sampled 1.000 01-jan-2005 10 SIGN=1B9A308CC0F7
-"""
-
 class TestParse(unittest.TestCase):
-    def test_comment(self):
-        "Pass"
+    def test_empty_lines(self):
+        samples = [("", "nothing"),
+                   ("\n", "one empty"),
+                   ("   ", "only spaces"),
+                   ("   \n", "spaces an newline"),
+                   ("\n\n", "two newlines"),
+                   ("\n   \n", "newline, spaces an newline")]
 
-        j = p.parse(sample_config)
-        print(j)
-        print(j.pretty())
+        for s in samples:
+            with self.subTest(s=s[1]):
+                j = p.parse(s[0])
+                logging.debug(j)
+                logging.debug(j.pretty())
 
-        self.assertFalse(False)
+                self.assertFalse(j.children)
+
+    def test_comments(self):
+        samples = [
+            ("# only one comment", "one comment"),
+            ("# only one comment\n", "one comment and newline"),
+            ("""# one comment with empty line
+            
+# One more comment""", "Comment, empty line, comment"),
+            ("""
+# one comment with empty line before an after
+
+# One more comment""", "Comments with empty lines before and after"),
+        ]
+
+        for s in samples:
+            with self.subTest(s=s[1]):
+                j = p.parse(s[0])
+                logging.debug(j)
+                logging.debug(j.pretty())
+
+                self.assertFalse(j.children)
 
 
 if __name__ == '__main__':
