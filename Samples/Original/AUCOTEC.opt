@@ -1,0 +1,113 @@
+# 07:09 16.07.2019 / KSA
+### AUCOTEC STANDARD OPTIONS START ###
+
+AUTOMATIC_REREAD OFF
+DEBUGLOG +"D:/Lizenz EB/aucotec.log"
+GROUPCASEINSENSITIVE ON
+##### NOLOG
+REPORTLOG   +"D:/Lizenz EB/report.log"
+
+### AUCOTEC STANDARD OPTIONS  END ###
+
+
+### FERRUM STANDARD OPTIONS  START ###
+GROUP KeineBerechtigungen Admin Administrator FIS GBucher Guest HIN RIS  
+ 
+GROUP Konserven           AUTOMATIKER ENP HEK HIS INN KAY KSA SBE SCH VOU WAC 
+ 
+# !!! GROUP Zentrifugen besteht aus Zentrifugen_Voll + Zentrifugen_PL + Zentrifugen_Externe 
+ 
+GROUP Zentrifugen         BAR BAU BOC BRD GRN IMP RPaolozzi SSchmutz VAZ WLB 
+ 
+GROUP Zentrifugen_Voll    BAU 
+GROUP Zentrifugen_PL      BAR BOC IMP VAZ 
+GROUP Zentrifugen_Externe BRD GRN RPaolozzi SSchmutz WLB 
+ 
+GROUP ferruSwitch         HSA 
+
+
+## SONDERGRUPPEN DEFINIEREN
+GROUP OLD_6_3     Niemand
+GROUP OLD_6_4     Niemand
+GROUP OLD_6_5     Niemand
+GROUP OLD_6_6     Niemand
+GROUP OLD_6_7     Niemand
+GROUP OLD_6_8_0   Niemand
+GROUP OLD_6_8_2   Niemand
+
+## BERECHTIGUNGEN ZUSTIMMEN
+
+# --- Unlimited Sheets
+RESERVE 5 1000 GROUP Konserven
+RESERVE 1 1000 GROUP Zentrifugen_Voll
+RESERVE 1 1000 GROUP ferruSwitch
+
+INCLUDE 1000 GROUP Konserven
+INCLUDE 1000 GROUP Zentrifugen_Voll
+INCLUDE 1000 GROUP ferruSwitch
+
+# --- 100 Sheets
+RESERVE 1 1007 GROUP Zentrifugen_PL
+RESERVE 1 1007 GROUP Zentrifugen_Externe
+
+INCLUDE 1007 GROUP Zentrifugen_PL
+INCLUDE 1007 GROUP Zentrifugen_Externe
+
+# --- Smart PDF
+RESERVE 5 1019 GROUP Konserven
+RESERVE 2 1019 GROUP Zentrifugen
+RESERVE 1 1019 GROUP ferruSwitch
+
+INCLUDE 1019 GROUP Konserven
+INCLUDE 1019 GROUP Zentrifugen
+INCLUDE 1019 GROUP ferruSwitch
+
+# --- Dynamic License Manager
+RESERVE 5 1039 GROUP Konserven
+RESERVE 3 1039 GROUP Zentrifugen
+RESERVE 1 1039 GROUP ferruSwitch
+
+INCLUDE 1039 GROUP Konserven
+INCLUDE 1039 GROUP Zentrifugen
+INCLUDE 1039 GROUP ferruSwitch
+
+# --- Engineering Base Electrical Pro
+RESERVE 5 1081 GROUP Konserven
+RESERVE 3 1081 GROUP Zentrifugen
+RESERVE 1 1081 GROUP ferruSwitch
+
+INCLUDE 1081 GROUP Konserven
+INCLUDE 1081 GROUP Zentrifugen
+INCLUDE 1081 GROUP ferruSwitch
+
+# --- Version 6.3
+INCLUDE 1069 GROUP OLD_6_3
+
+# --- Version 6.4
+INCLUDE 1073 GROUP OLD_6_4 
+
+# --- Version 6.5
+INCLUDE 1077 GROUP OLD_6_5
+
+# --- Version 6.6
+##RESERVE 2 1164 GROUP Zentrifugen
+
+INCLUDE 1164 GROUP OLD_6_6
+##INCLUDE 1164 GROUP Zentrifugen
+
+# --- Version 6.7
+INCLUDE 1173 GROUP OLD_6_7
+
+# --- Version 6.8.0
+INCLUDE 1190 GROUP OLD_6_8_0
+
+# --- Version 2019 (6.8.2)
+RESERVE 5 1193 GROUP Konserven
+RESERVE 3 1193 GROUP Zentrifugen
+RESERVE 1 1193 GROUP ferruSwitch
+
+INCLUDE 1193 GROUP Konserven
+INCLUDE 1193 GROUP Zentrifugen
+INCLUDE 1193 GROUP ferruSwitch
+
+### FERRUM STANDARD OPTIONS  END ###
