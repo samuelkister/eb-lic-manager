@@ -2,24 +2,30 @@
 
 from lark import Lark, Transformer, v_args
 config_grammar = r"""
-    start: _EMPTY_LINE* | _COMMENT*
+    start: (_EOL
+        | _COMMENT
+        | server)*
     
-    _EMPTY_LINE: /^[\t ]*\n/
+    _EOL: /[ \t]*/ NEWLINE
     
-    _COMMENT: "#" /[^\n]*/
+    _COMMENT: "#" /[^\n]*/ [_EOL]
     
-    %ignore _EMPTY_LINE
-    %ignore _COMMENT
-    %ignore NEWLINE
+    server: "SERVER "i SERVER_NAME SERVER_ID SERVER_PORT [SERVER_REST] [_EOL]
+    SERVER_NAME: /\S+/
+    SERVER_ID: /\S+/
+    SERVER_PORT: INT
+    SERVER_REST: /[^\n]+/
+    
+    WS: /[ \t\f\r]+/
+    
     %ignore WS
     
-    %import common.WS
     %import common.NEWLINE
     %import common.WORD
     %import common.INT
 """
 
-config_parser = Lark(config_grammar)
+config_parser = Lark(config_grammar, parser="lalr")
 parse = config_parser.parse
 
 
