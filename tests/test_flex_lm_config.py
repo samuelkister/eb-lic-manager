@@ -5,18 +5,28 @@ import logging
 
 import eb_lic_manager.flex_lm.config_file as p
 
-logging.basicConfig(level=logging.DEBUG, stream=sys.stderr)
+STANDARD_LOGGING_LEVEL = logging.INFO
+logging.basicConfig(level=STANDARD_LOGGING_LEVEL, stream=sys.stderr)
 
 with open("../Samples/aucotec.lic") as f:
     sample_config_file = f.read()
 
+
+def setLoggingLevelTo(level):
+    logger = logging.getLogger()
+    logger.setLevel(level)
+
+
 class TestParse(unittest.TestCase):
+    def setUp(self) -> None:
+        setLoggingLevelTo(STANDARD_LOGGING_LEVEL)
+
     def test_complete_config_file(self):
         j = p.parse(sample_config_file)
 
     def test_empty_lines(self):
         """
-        Empty lines should be ignored.
+        Empty lines should be implicitely ignored.
         Parsing return an empty list
         :return: Nothing
         """
@@ -104,11 +114,54 @@ class TestParse(unittest.TestCase):
                     for token in children[i].children:
                         self.assertEqual(token.value, d[token.type])
 
+    def test_vendor(self):
+        setLoggingLevelTo(logging.DEBUG)
 
+        """
+        Vendor lines are decoded
+        :return: Nothing
+        """
 
+        # VENDOR vendor[vendor_daemon_path] \
+        #     [[OPTIONS =]options_file_path] [[PORT =]port]
 
+        samples = [
+            ('VENDOR vendor_name', "Only vendor name"),
+            ('VENDOR vendor_name deamon_path', "Vendor name, deamon path"),
+            ('VENDOR vendor_name deamon_path OPTIONS="/path/to/file.opt"', "Vendor name, 'OPTIONS='+path"),
+            ('VENDOR vendor_name deamon_path OPTIONS="/path/to/file.opt" PORT=1234',
+                "Vendor name, 'OPTIONS='+path, 'PORT='+port")
+        ]
 
+        values = [
+            {'VENDOR_NAME': 'vendor_name',
+             'VENDOR_OPTION': ['deamon_path', 'OPTIONS="/path/to/file.opt"', 'PORT=1234']},
+        ]
 
+        for s in samples:
+            count = {'VENDOR_OPTION': -1}
+
+            with self.subTest(s=s[1]):
+                j = p.parse(s[0])
+
+                logging.debug(j)
+                logging.debug(j.pretty())
+
+                children = j.children
+
+                for i in range(len(children)):
+                    child = children[i]
+                    d = values[i]
+
+                    logging.debug(d)
+
+                    for token in children[i].children:
+                        expected = d[token.type]
+                        if isinstance(expected, list):
+                            count[token.type] += 1
+                            expected = expected[count[token.type]]
+
+                        self.assertEqual(token.value, expected)
 
 
 if __name__ == '__main__':

@@ -4,7 +4,8 @@ from lark import Lark, Transformer, v_args
 config_grammar = r"""
     start: (_EOL
         | _COMMENT
-        | server)*
+        | server
+        | vendor)*
     
     _EOL: /[ \t]*/ NEWLINE
     
@@ -16,7 +17,12 @@ config_grammar = r"""
     SERVER_PORT: INT
     SERVER_REST: /[^\n]+/
     
+    vendor: "VENDOR "i VENDOR_NAME [VENDOR_OPTION*] [_EOL]
+    VENDOR_NAME: NON_WHITESPACE
+    VENDOR_OPTION: NON_WHITESPACE+
+    
     WS: /[ \t\f\r]+/
+    NON_WHITESPACE: /\S+/
     
     %ignore WS
     
