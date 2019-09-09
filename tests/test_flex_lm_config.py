@@ -163,6 +163,25 @@ class TestParse(unittest.TestCase):
 
                         self.assertEqual(token.value, expected)
 
+    def test_use_server(self):
+        """
+        USE_SERVER should be ignored.
+        Parsing return an empty list
+        :return: Nothing
+        """
+        samples = [
+            ("USE_SERVER", "without newline"),
+            ("USE_SERVER\n", "with newline"),
+        ]
+
+        for s in samples:
+            with self.subTest(s=s[1]):
+                j = p.parse(s[0])
+                logging.debug(j)
+                logging.debug(j.pretty())
+
+                self.assertFalse(j.children)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,7 +5,8 @@ config_grammar = r"""
     start: (_EOL
         | _COMMENT
         | server
-        | vendor)*
+        | vendor
+        | _USE_SERVER)*
     
     _EOL: /[ \t]*/ NEWLINE
     
@@ -20,6 +21,8 @@ config_grammar = r"""
     vendor: "VENDOR "i VENDOR_NAME [VENDOR_OPTION*] [_EOL]
     VENDOR_NAME: NON_WHITESPACE
     VENDOR_OPTION: NON_WHITESPACE+
+    
+    _USE_SERVER: "USE_SERVER" [_EOL]
     
     WS: /[ \t\f\r]+/
     NON_WHITESPACE: /\S+/
