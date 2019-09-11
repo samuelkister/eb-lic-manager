@@ -195,6 +195,7 @@ class TestParse(unittest.TestCase):
 
         optional_attribute can be KEY, KEY=VALUE, KEY="VALUE STRING"
         """
+        #TODO: extend tests (add optional features)
 
         set_logging_level_to(logging.DEBUG)
 

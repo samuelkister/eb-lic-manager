@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from lark import Lark, Transformer, v_args
+#TODO: Change start rule (in config_file for example)
+#TODO: Replace all '/\S+/' with 'NON_WHITESPACE+'
+#TODO: Check if 'NON_WHITESPACE**+**' is necessary (='/\S+/', already has +)
+
 config_grammar = r"""
     start: (_EOL
         | _COMMENT
@@ -48,7 +52,9 @@ config_grammar = r"""
     %import common.INT
 """
 
+#TODO: Write+Test lexer that generate a direct usable "config_file" object
 config_parser = Lark(config_grammar, parser="lalr")
+#TODO: rename "parse" in something more unique
 parse = config_parser.parse
 
 
