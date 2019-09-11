@@ -12,17 +12,22 @@ with open("../Samples/aucotec.lic") as f:
     sample_config_file = f.read()
 
 
-def setLoggingLevelTo(level):
+def set_logging_level_to(level):
     logger = logging.getLogger()
     logger.setLevel(level)
 
 
 class TestParse(unittest.TestCase):
     def setUp(self) -> None:
-        setLoggingLevelTo(STANDARD_LOGGING_LEVEL)
+        set_logging_level_to(STANDARD_LOGGING_LEVEL)
 
     def test_complete_config_file(self):
+#        set_logging_level_to(logging.DEBUG)
+
         j = p.parse(sample_config_file)
+
+        logging.debug(j)
+        logging.debug(j.pretty())
 
     def test_empty_lines(self):
         """
@@ -115,8 +120,6 @@ class TestParse(unittest.TestCase):
                         self.assertEqual(token.value, d[token.type])
 
     def test_vendor(self):
-        setLoggingLevelTo(logging.DEBUG)
-
         """
         Vendor lines are decoded
         :return: Nothing
@@ -181,6 +184,56 @@ class TestParse(unittest.TestCase):
                 logging.debug(j.pretty())
 
                 self.assertFalse(j.children)
+
+    def test_feature(self):
+        """
+        Server lines are decoded
+        :return: Nothing
+
+        {FEATURE|INCREMENT} feature vendor feat_version exp_date \
+            num_lic SIGN=sign [optional_attributes]
+
+        optional_attribute can be KEY, KEY=VALUE, KEY="VALUE STRING"
+        """
+
+        set_logging_level_to(logging.DEBUG)
+
+        samples = [
+            ('FEATURE feature vendor version exp_date num_lic SIGN=sign', "Minimal feature"),
+            ('FEATURE feature vendor version exp_date num_lic SIGN="sign"', "Minimal feature, SIGN quoted"),
+        ]
+
+        values = [
+            {'FEAT_NAME': 'feature',
+             'FEAT_VENDOR': 'vendor',
+             'FEAT_VERSION': 'version',
+             'EXP_DATE': 'exp_date',
+             'NUM_LIC': 'num_lic',
+             'FEAT_OPTIONAL': ['SIGN=sign'],
+             },
+            {'FEAT_NAME': 'feature',
+             'FEAT_VENDOR': 'vendor',
+             'FEAT_VERSION': 'version',
+             'EXP_DATE': 'exp_date',
+             'NUM_LIC': 'num_lic',
+             'FEAT_OPTIONAL': ['SIGN="sign"'],
+             },
+        ]
+
+        for sample, expected in zip(samples, values):
+            with self.subTest(s=sample[1]):
+                tree = p.parse(sample[0])
+                logging.debug(tree)
+                logging.debug(tree.pretty())
+
+                for child in tree.children:
+                    for token in child.children:
+                        expected_val = expected[token.type]
+
+                        if isinstance(expected_val, list):
+                            self.assertIn(token.value, expected_val)
+                        else:
+                            self.assertEqual(token.value, expected_val)
 
 
 if __name__ == '__main__':
