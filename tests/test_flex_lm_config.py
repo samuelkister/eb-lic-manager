@@ -5,17 +5,19 @@ import logging
 
 import eb_lic_manager.flex_lm.config_file as p
 
+from lark.tree import Tree
+from lark.lexer import Token
+
 STANDARD_LOGGING_LEVEL = logging.INFO
 logging.basicConfig(level=STANDARD_LOGGING_LEVEL, stream=sys.stderr)
-
-with open("../Samples/aucotec.lic") as f:
-    sample_config_file = f.read()
 
 
 def set_logging_level_to(level):
     logger = logging.getLogger()
     logger.setLevel(level)
 
+#TODO: replace tests of values with Lark.Tree comparison where it simplifies tests
+# (see test_server)
 
 class TestParse(unittest.TestCase):
     def setUp(self) -> None:
@@ -23,6 +25,8 @@ class TestParse(unittest.TestCase):
 
     def test_complete_config_file(self):
 #        set_logging_level_to(logging.DEBUG)
+        with open("../Samples/aucotec.lic") as f:
+            sample_config_file = f.read()
 
         j = p.parse(sample_config_file)
 
@@ -83,6 +87,8 @@ class TestParse(unittest.TestCase):
         Server lines are decoded
         :return: Nothing
         """
+        # set_logging_level_to(logging.DEBUG)
+
         samples = [
             ("SERVER my_server1 17007ea8 11987", "Single server"),
             ("SERVER my_server1 17007ea8 11987 PRIMARY_IS_MASTER HEARTBEAT_INTERVAL=1", "Single server with options"),
@@ -91,33 +97,49 @@ class TestParse(unittest.TestCase):
              "SERVER my_server3 37007ea8 31987", "Three server")
         ]
 
-        values = [
-            {'SERVER_NAME': 'my_server1',
-             'SERVER_ID': '17007ea8',
-             'SERVER_PORT': '11987',
-             'SERVER_REST': 'PRIMARY_IS_MASTER HEARTBEAT_INTERVAL=1'},
-            {'SERVER_NAME': 'my_server2',
-             'SERVER_ID': '27007ea8',
-             'SERVER_PORT': '21987'},
-            {'SERVER_NAME': 'my_server3',
-             'SERVER_ID': '37007ea8',
-             'SERVER_PORT': '31987'}
-        ]
+        trees = [Tree('config', [
+                    Tree('server',
+                       [Token('SERVER_NAME', 'my_server1'),
+                        Token('SERVER_ID', '17007ea8'),
+                        Token('SERVER_PORT', '11987'),
+                        ])
+                ]),
+                Tree('config', [
+                    Tree('server',
+                       [Token('SERVER_NAME', 'my_server1'),
+                        Token('SERVER_ID', '17007ea8'),
+                        Token('SERVER_PORT', '11987'),
+                        Token('SERVER_REST', 'PRIMARY_IS_MASTER HEARTBEAT_INTERVAL=1')]),
+                ]),
+                Tree('config', [
+                    Tree('server',
+                        [Token('SERVER_NAME', 'my_server1'),
+                         Token('SERVER_ID', '17007ea8'),
+                         Token('SERVER_PORT', '11987'),
+                        ]
+                    ),
+                    Tree('server',
+                        [Token('SERVER_NAME', 'my_server2'),
+                         Token('SERVER_ID', '27007ea8'),
+                         Token('SERVER_PORT', '21987'),
+                        ]
+                    ),
+                    Tree('server',
+                        [Token('SERVER_NAME', 'my_server3'),
+                         Token('SERVER_ID', '37007ea8'),
+                         Token('SERVER_PORT', '31987'),
+                        ]
+                    ),
+                 ])
+               ]
 
-        for s in samples:
-            with self.subTest(s=s[1]):
-                j = p.parse(s[0])
-                logging.debug(j)
-                logging.debug(j.pretty())
+        for sample, expected in zip(samples, trees):
+            with self.subTest(s=sample[1]):
+                tree = p.parse(sample[0])
+                logging.debug(tree)
+                logging.debug(tree.pretty())
 
-                children = j.children
-
-                for i in range(len(children)):
-                    child = children[i]
-                    d = values[i]
-
-                    for token in children[i].children:
-                        self.assertEqual(token.value, d[token.type])
+                self.assertEqual(expected, tree)
 
     def test_vendor(self):
         """
@@ -197,7 +219,7 @@ class TestParse(unittest.TestCase):
         """
         #TODO: extend tests (add optional features)
 
-        set_logging_level_to(logging.DEBUG)
+        # set_logging_level_to(logging.DEBUG)
 
         samples = [
             ('FEATURE feature vendor version exp_date num_lic SIGN=sign', "Minimal feature"),
@@ -227,14 +249,13 @@ class TestParse(unittest.TestCase):
                 logging.debug(tree)
                 logging.debug(tree.pretty())
 
-                for child in tree.children:
-                    for token in child.children:
-                        expected_val = expected[token.type]
+                for token in tree.children[0].children:
+                    expected_val = expected[token.type]
 
-                        if isinstance(expected_val, list):
-                            self.assertIn(token.value, expected_val)
-                        else:
-                            self.assertEqual(token.value, expected_val)
+                    if isinstance(expected_val, list):
+                        self.assertIn(token.value, expected_val)
+                    else:
+                        self.assertEqual(token.value, expected_val)
 
 
 if __name__ == '__main__':

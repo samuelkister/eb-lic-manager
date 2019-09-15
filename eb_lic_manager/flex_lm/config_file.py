@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from lark import Lark, Transformer, v_args
-#TODO: Change start rule (in config_file for example)
+from lark import Lark
 
 config_grammar = r"""
-    start: (_EOL
+    config: (_EOL
         | _COMMENT
         | server
         | vendor
@@ -51,7 +50,7 @@ config_grammar = r"""
 """
 
 #TODO: Write+Test transformer that generate a direct usable "config_file" object
-config_parser = Lark(config_grammar, parser="lalr")
+config_parser = Lark(config_grammar, parser='lalr', start='config')
 #TODO: rename "parse" in something more unique
 parse = config_parser.parse
 
