@@ -164,7 +164,6 @@ class TestParse(unittest.TestCase):
         ]
 
         for s in samples:
-            count = {'VENDOR_OPTION': -1}
 
             with self.subTest(s=s[1]):
                 j = p.parse(s[0])
@@ -187,6 +186,7 @@ class TestParse(unittest.TestCase):
                             expected = expected[count[token.type]]
 
                         self.assertEqual(token.value, expected)
+            count = {'VENDOR_OPTION': -1}
 
     def test_use_server(self):
         """
@@ -219,43 +219,32 @@ class TestParse(unittest.TestCase):
         """
         #TODO: extend tests (add optional features)
 
-        # set_logging_level_to(logging.DEBUG)
+        set_logging_level_to(logging.DEBUG)
 
-        samples = [
-            ('FEATURE feature vendor version exp_date num_lic SIGN=sign', "Minimal feature"),
-            ('FEATURE feature vendor version exp_date num_lic SIGN="sign"', "Minimal feature, SIGN quoted"),
-        ]
+        data = [
+            ('FEATURE feature vendor version exp_date num_lic SIGN=sign', "Minimal feature",
+             Tree('feature', [
+                 Token('FEAT_NAME', 'feature'),
+                  Token('FEAT_VENDOR', 'vendor'),
+                  Token('FEAT_VERSION', 'version'),
+                  Token('EXP_DATE', 'exp_date'),
+                  Token('NUM_LIC', 'num_lic'),
+                  Tree('feat_optional', [
+                      Token('KEY', 'SIGN'),
+                      Token('VALUE', 'sign')
+                  ])
+              ])
+             )]
+        #            ('FEATURE feature vendor version exp_date num_lic SIGN="sign"', "Minimal feature, SIGN quoted"),
 
-        values = [
-            {'FEAT_NAME': 'feature',
-             'FEAT_VENDOR': 'vendor',
-             'FEAT_VERSION': 'version',
-             'EXP_DATE': 'exp_date',
-             'NUM_LIC': 'num_lic',
-             'FEAT_OPTIONAL': ['SIGN=sign'],
-             },
-            {'FEAT_NAME': 'feature',
-             'FEAT_VENDOR': 'vendor',
-             'FEAT_VERSION': 'version',
-             'EXP_DATE': 'exp_date',
-             'NUM_LIC': 'num_lic',
-             'FEAT_OPTIONAL': ['SIGN="sign"'],
-             },
-        ]
-
-        for sample, expected in zip(samples, values):
-            with self.subTest(s=sample[1]):
-                tree = p.parse(sample[0])
+        for sample, info, expected in data:
+            with self.subTest(s=info):
+                tree = p.parse(sample)
                 logging.debug(tree)
                 logging.debug(tree.pretty())
 
-                for token in tree.children[0].children:
-                    expected_val = expected[token.type]
+                self.assertEqual(expected, tree)
 
-                    if isinstance(expected_val, list):
-                        self.assertIn(token.value, expected_val)
-                    else:
-                        self.assertEqual(token.value, expected_val)
 
 
 if __name__ == '__main__':

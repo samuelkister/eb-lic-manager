@@ -27,17 +27,22 @@ config_grammar = r"""
     _USE_SERVER: "USE_SERVER" [_EOL]
     
     feature: "FEATURE "i _feature_param [_EOL]
-    _feature_param: FEAT_NAME FEAT_VENDOR FEAT_VERSION EXP_DATE NUM_LIC [FEAT_OPTIONAL*]
+    _feature_param: FEAT_NAME FEAT_VENDOR FEAT_VERSION EXP_DATE NUM_LIC [feat_optional*]
     
     FEAT_NAME: NON_WHITESPACE
     FEAT_VENDOR: NON_WHITESPACE
     FEAT_VERSION: NON_WHITESPACE
     EXP_DATE: NON_WHITESPACE
     NUM_LIC: NON_WHITESPACE
-    FEAT_OPTIONAL: NON_WHITESPACE
+    feat_optional: KEY ["=" VALUE]
+    VALUE: STRING | NON_STRING
+    KEY: CNAME
     
     WS: /[ \t\f\r]+/
     NON_WHITESPACE: /\S+/
+    NON_STRING: /[^"]\S+/
+    STRING: "\"" CONTINUED_STRING "\""
+    CONTINUED_STRING: /.*?/
     
     LINE_CONTINUATION: /\\[ \t\f\r]*\n/ [WS]
     
@@ -45,8 +50,9 @@ config_grammar = r"""
     %ignore LINE_CONTINUATION
     
     %import common.NEWLINE
-    %import common.WORD
+    // %import common.ESCAPED_STRING
     %import common.INT
+    %import common.CNAME
 """
 
 #TODO: Write+Test transformer that generate a direct usable "config_file" object
