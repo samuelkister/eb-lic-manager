@@ -16,15 +16,96 @@ def set_logging_level_to(level):
     logger = logging.getLogger()
     logger.setLevel(level)
 
-#TODO: replace tests of values with Lark.Tree comparison where it simplifies tests
-# (see test_server)
+
+def generate_tree(construct):
+    logging.debug("generate_tree({})".format(construct))
+
+    if not isinstance(construct, list) and not isinstance(construct, tuple):
+        raise AttributeError("construct not list nor tuple {}".format(construct))
+
+    if isinstance(construct, tuple):
+        return Token(construct[0], construct[1])
+
+    if isinstance(construct, list):
+        if len(construct) == 1:
+            return Tree(construct[0], [])
+        else:
+            return Tree(construct[0], [generate_tree(el) for el in construct[1:]])
+
+
+def generate_expected_tree(construct=[]):
+    return generate_tree(['config', construct])
+
+
+class TestTreeGenerator(unittest.TestCase):
+    """testing of the tree generator"""
+
+    def setUp(self) -> None:
+        set_logging_level_to(STANDARD_LOGGING_LEVEL)
+
+    def testWrongParmeters(self):
+        with self.assertRaises(Exception):
+            generate_tree([])
+
+        with self.assertRaises(Exception):
+            generate_tree(('NoName',))
+
+    def testEmptyTree(self):
+        # set_logging_level_to(logging.DEBUG)
+
+        expect = Tree('config', [])
+
+        value = generate_tree(['config'])
+        self.assertEqual(expect, value)
+
+    def testTreeWithOneToken(self):
+        expect = Tree('config', [Token('TOKEN1', 'Value1')])
+        value = generate_tree(['config', ('TOKEN1', 'Value1')])
+
+        self.assertEqual(expect, value)
+
+    def testTreeWithMultipleToken(self):
+        expect = Tree('config', [Token('TOKEN1', 'Value1'), Token('TOKEN2', 'Value2')])
+        value = generate_tree(['config', ('TOKEN1', 'Value1'), ('TOKEN2', 'Value2')])
+
+        self.assertEqual(expect, value)
+
+    def testTreeWithSubTree(self):
+        expect = Tree('config', [
+                    Tree('subtree', [Token('TOKEN1', 'Value1'), Token('TOKEN2', 'Value2')])
+                ])
+
+        value = generate_tree(['config', ['subtree', ('TOKEN1', 'Value1'), ('TOKEN2', 'Value2')]])
+
+        self.assertEqual(expect, value)
+
+    def testComplexTree(self):
+        expect = Tree('config', [
+                    Token('TOKEN1', 'Value1'),
+                    Tree('subtree1', [Token('TOKEN1.1', 'Value1.1'), Token('TOKEN1.2', 'Value1.2')]),
+                    Token('TOKEN2', 'Value2'),
+                    Tree('subtree2', [Token('TOKEN2.1', 2.1), Token('TOKEN2.2', 'Value2.2')]),
+        ])
+
+        value = generate_tree(['config',
+                               ('TOKEN1', 'Value1'),
+                               ['subtree1', ('TOKEN1.1', 'Value1.1'), ('TOKEN1.2', 'Value1.2')],
+                               ('TOKEN2', 'Value2'),
+                               ['subtree2', ('TOKEN2.1', 2.1), ('TOKEN2.2', 'Value2.2')]
+                               ])
+
+        self.assertEqual(expect, value)
+
+
+# TODO: replace tests of values with Lark.Tree comparison where it simplifies tests
+#  (see test_server)
 
 class TestParse(unittest.TestCase):
     def setUp(self) -> None:
         set_logging_level_to(STANDARD_LOGGING_LEVEL)
 
     def test_complete_config_file(self):
-#        set_logging_level_to(logging.DEBUG)
+        # set_logging_level_to(logging.DEBUG)
         with open("../Samples/aucotec.lic") as f:
             sample_config_file = f.read()
 
