@@ -18,7 +18,7 @@ def set_logging_level_to(level):
 
 
 def generate_tree(construct):
-    logging.debug("generate_tree({})".format(construct))
+    # logging.debug("generate_tree({})".format(construct))
 
     if not isinstance(construct, list) and not isinstance(construct, tuple):
         raise AttributeError("construct not list nor tuple {}".format(construct))
@@ -298,29 +298,59 @@ class TestParse(unittest.TestCase):
 
         optional_attribute can be KEY, KEY=VALUE, KEY="VALUE STRING"
         """
-        #TODO: extend tests (add optional features)
+        # TODO: extend tests (add optional features)
 
-        set_logging_level_to(logging.DEBUG)
+        # set_logging_level_to(logging.DEBUG)
 
         data = [
             ('FEATURE feature vendor version exp_date num_lic SIGN=sign', "Minimal feature",
-             Tree('feature', [
-                 Token('FEAT_NAME', 'feature'),
-                  Token('FEAT_VENDOR', 'vendor'),
-                  Token('FEAT_VERSION', 'version'),
-                  Token('EXP_DATE', 'exp_date'),
-                  Token('NUM_LIC', 'num_lic'),
-                  Tree('feat_optional', [
-                      Token('KEY', 'SIGN'),
-                      Token('VALUE', 'sign')
-                  ])
-              ])
-             )]
-        #            ('FEATURE feature vendor version exp_date num_lic SIGN="sign"', "Minimal feature, SIGN quoted"),
+             generate_expected_tree(
+                 ['feature',
+                     ('FEAT_NAME', 'feature'),
+                      ('FEAT_VENDOR', 'vendor'),
+                      ('FEAT_VERSION', 'version'),
+                      ('EXP_DATE', 'exp_date'),
+                      ('NUM_LIC', 'num_lic'),
+                      ['feat_optional',
+                          ('KEY', 'SIGN'),
+                          ('NON_STRING', 'sign')
+                      ]
+                 ]
+             )),
+            ('FEATURE feature vendor version exp_date num_lic SIGN="sign"', "Minimal feature, SIGN quoted",
+             generate_expected_tree(
+                 ['feature',
+                     ('FEAT_NAME', 'feature'),
+                      ('FEAT_VENDOR', 'vendor'),
+                      ('FEAT_VERSION', 'version'),
+                      ('EXP_DATE', 'exp_date'),
+                      ('NUM_LIC', 'num_lic'),
+                      ['feat_optional',
+                          ('KEY', 'SIGN'),
+                          ('STRING', '"sign"')
+                      ]
+                 ]
+             )),
+            ('FEATURE feature vendor version exp_date num_lic SIGN="first \\\n   second"', "Minimal feature, SIGN quoted ith line break",
+             generate_expected_tree(
+                 ['feature',
+                     ('FEAT_NAME', 'feature'),
+                      ('FEAT_VENDOR', 'vendor'),
+                      ('FEAT_VERSION', 'version'),
+                      ('EXP_DATE', 'exp_date'),
+                      ('NUM_LIC', 'num_lic'),
+                      ['feat_optional',
+                          ('KEY', 'SIGN'),
+                          ('STRING', '"first \\\n   second"')
+                      ]
+                 ]
+             ))
+        ]
 
         for sample, info, expected in data:
             with self.subTest(s=info):
                 tree = p.parse(sample)
+                logging.debug(sample)
                 logging.debug(tree)
                 logging.debug(tree.pretty())
 
