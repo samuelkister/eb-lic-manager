@@ -54,11 +54,10 @@ config_grammar = r"""
     %import common.INT
     %import common.CNAME
 """
-#TODO: in string /.+/ is also catching the "\" of a line continuation. Find right regex
 
-#TODO: Write+Test transformer that generate a direct usable "config_file" object
+# TODO: Write+Test transformer that generate a direct usable "config_file" object
 config_parser = Lark(config_grammar, parser='lalr', start='config')
-#TODO: rename "parse" in something more unique
+# TODO: rename "parse" in something more unique
 parse = config_parser.parse
 
 
