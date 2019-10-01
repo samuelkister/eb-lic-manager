@@ -343,51 +343,6 @@ class TestParse(unittest.TestCase):
 
         logging.debug(data)
 
-        # data = [
-        #     ('FEATURE feature vendor version exp_date num_lic SIGN=sign', "Minimal feature",
-        #      generate_expected_tree(
-        #          ['feature',
-        #              ('FEAT_NAME', 'feature'),
-        #               ('FEAT_VENDOR', 'vendor'),
-        #               ('FEAT_VERSION', 'version'),
-        #               ('EXP_DATE', 'exp_date'),
-        #               ('NUM_LIC', 'num_lic'),
-        #               ['feat_optional',
-        #                   ('KEY', 'SIGN'),
-        #                   ('NON_STRING', 'sign')
-        #               ]
-        #          ]
-        #      )),
-        #     ('FEATURE feature vendor version exp_date num_lic SIGN="sign"', "Minimal feature, SIGN quoted",
-        #      generate_expected_tree(
-        #          ['feature',
-        #              ('FEAT_NAME', 'feature'),
-        #               ('FEAT_VENDOR', 'vendor'),
-        #               ('FEAT_VERSION', 'version'),
-        #               ('EXP_DATE', 'exp_date'),
-        #               ('NUM_LIC', 'num_lic'),
-        #               ['feat_optional',
-        #                   ('KEY', 'SIGN'),
-        #                   ('STRING', '"sign"')
-        #               ]
-        #          ]
-        #      )),
-        #     ('FEATURE feature vendor version exp_date num_lic SIGN="first \\\n   second"', "Minimal feature, SIGN quoted ith line break",
-        #      generate_expected_tree(
-        #          ['feature',
-        #              ('FEAT_NAME', 'feature'),
-        #               ('FEAT_VENDOR', 'vendor'),
-        #               ('FEAT_VERSION', 'version'),
-        #               ('EXP_DATE', 'exp_date'),
-        #               ('NUM_LIC', 'num_lic'),
-        #               ['feat_optional',
-        #                   ('KEY', 'SIGN'),
-        #                   ('STRING', '"first \\\n   second"')
-        #               ]
-        #          ]
-        #      ))
-        # ]
-
         for sample, info, expected in data:
             with self.subTest(s=info):
                 tree = p.parse(sample)
