@@ -72,8 +72,8 @@ class TestTreeGenerator(unittest.TestCase):
 
     def testTreeWithSubTree(self):
         expect = Tree('config', [
-                    Tree('subtree', [Token('TOKEN1', 'Value1'), Token('TOKEN2', 'Value2')])
-                ])
+            Tree('subtree', [Token('TOKEN1', 'Value1'), Token('TOKEN2', 'Value2')])
+        ])
 
         value = generate_tree(['config', ['subtree', ('TOKEN1', 'Value1'), ('TOKEN2', 'Value2')]])
 
@@ -81,10 +81,10 @@ class TestTreeGenerator(unittest.TestCase):
 
     def testComplexTree(self):
         expect = Tree('config', [
-                    Token('TOKEN1', 'Value1'),
-                    Tree('subtree1', [Token('TOKEN1.1', 'Value1.1'), Token('TOKEN1.2', 'Value1.2')]),
-                    Token('TOKEN2', 'Value2'),
-                    Tree('subtree2', [Token('TOKEN2.1', 2.1), Token('TOKEN2.2', 'Value2.2')]),
+            Token('TOKEN1', 'Value1'),
+            Tree('subtree1', [Token('TOKEN1.1', 'Value1.1'), Token('TOKEN1.2', 'Value1.2')]),
+            Token('TOKEN2', 'Value2'),
+            Tree('subtree2', [Token('TOKEN2.1', 2.1), Token('TOKEN2.2', 'Value2.2')]),
         ])
 
         value = generate_tree(['config',
@@ -146,12 +146,12 @@ class TestParse(unittest.TestCase):
         samples = [
             ("# only one comment", "one comment"),
             ("# only one comment\n", "one comment and newline"),
-            ("# one comment followed by empty line\n"\
-             "\t\n"\
+            ("# one comment followed by empty line\n" \
+             "\t\n" \
              "# One more comment", "Comment, empty line, comment"),
-            ("   \n"\
+            ("   \n" \
              "# one comment with empty line before an after\n" \
-             "    \n"\
+             "    \n" \
              "# One more comment", "Comments with empty lines before and after"),
         ]
 
@@ -173,46 +173,46 @@ class TestParse(unittest.TestCase):
         samples = [
             ("SERVER my_server1 17007ea8 11987", "Single server"),
             ("SERVER my_server1 17007ea8 11987 PRIMARY_IS_MASTER HEARTBEAT_INTERVAL=1", "Single server with options"),
-            ("SERVER my_server1 17007ea8 11987\n"\
-             "SERVER my_server2 27007ea8 21987\n"\
+            ("SERVER my_server1 17007ea8 11987\n" \
+             "SERVER my_server2 27007ea8 21987\n" \
              "SERVER my_server3 37007ea8 31987", "Three server")
         ]
 
         trees = [Tree('config', [
-                    Tree('server',
-                       [Token('SERVER_NAME', 'my_server1'),
-                        Token('SERVER_ID', '17007ea8'),
-                        Token('SERVER_PORT', '11987'),
-                        ])
-                ]),
-                Tree('config', [
-                    Tree('server',
-                       [Token('SERVER_NAME', 'my_server1'),
-                        Token('SERVER_ID', '17007ea8'),
-                        Token('SERVER_PORT', '11987'),
-                        Token('SERVER_REST', 'PRIMARY_IS_MASTER HEARTBEAT_INTERVAL=1')]),
-                ]),
-                Tree('config', [
-                    Tree('server',
-                        [Token('SERVER_NAME', 'my_server1'),
-                         Token('SERVER_ID', '17007ea8'),
-                         Token('SERVER_PORT', '11987'),
-                        ]
-                    ),
-                    Tree('server',
-                        [Token('SERVER_NAME', 'my_server2'),
-                         Token('SERVER_ID', '27007ea8'),
-                         Token('SERVER_PORT', '21987'),
-                        ]
-                    ),
-                    Tree('server',
-                        [Token('SERVER_NAME', 'my_server3'),
-                         Token('SERVER_ID', '37007ea8'),
-                         Token('SERVER_PORT', '31987'),
-                        ]
-                    ),
+            Tree('server',
+                 [Token('SERVER_NAME', 'my_server1'),
+                  Token('SERVER_ID', '17007ea8'),
+                  Token('SERVER_PORT', '11987'),
+                  ])
+        ]),
+                 Tree('config', [
+                     Tree('server',
+                          [Token('SERVER_NAME', 'my_server1'),
+                           Token('SERVER_ID', '17007ea8'),
+                           Token('SERVER_PORT', '11987'),
+                           Token('SERVER_REST', 'PRIMARY_IS_MASTER HEARTBEAT_INTERVAL=1')]),
+                 ]),
+                 Tree('config', [
+                     Tree('server',
+                          [Token('SERVER_NAME', 'my_server1'),
+                           Token('SERVER_ID', '17007ea8'),
+                           Token('SERVER_PORT', '11987'),
+                           ]
+                          ),
+                     Tree('server',
+                          [Token('SERVER_NAME', 'my_server2'),
+                           Token('SERVER_ID', '27007ea8'),
+                           Token('SERVER_PORT', '21987'),
+                           ]
+                          ),
+                     Tree('server',
+                          [Token('SERVER_NAME', 'my_server3'),
+                           Token('SERVER_ID', '37007ea8'),
+                           Token('SERVER_PORT', '31987'),
+                           ]
+                          ),
                  ])
-               ]
+                 ]
 
         for sample, expected in zip(samples, trees):
             with self.subTest(s=sample[1]):
@@ -236,7 +236,7 @@ class TestParse(unittest.TestCase):
             ('VENDOR vendor_name deamon_path', "Vendor name, deamon path"),
             ('VENDOR vendor_name deamon_path OPTIONS="/path/to/file.opt"', "Vendor name, 'OPTIONS='+path"),
             ('VENDOR vendor_name deamon_path OPTIONS="/path/to/file.opt" PORT=1234',
-                "Vendor name, 'OPTIONS='+path, 'PORT='+port")
+             "Vendor name, 'OPTIONS='+path, 'PORT='+port")
         ]
 
         values = [
@@ -302,50 +302,91 @@ class TestParse(unittest.TestCase):
 
         # set_logging_level_to(logging.DEBUG)
 
-        data = [
-            ('FEATURE feature vendor version exp_date num_lic SIGN=sign', "Minimal feature",
-             generate_expected_tree(
-                 ['feature',
-                     ('FEAT_NAME', 'feature'),
-                      ('FEAT_VENDOR', 'vendor'),
-                      ('FEAT_VERSION', 'version'),
-                      ('EXP_DATE', 'exp_date'),
-                      ('NUM_LIC', 'num_lic'),
-                      ['feat_optional',
-                          ('KEY', 'SIGN'),
-                          ('NON_STRING', 'sign')
-                      ]
-                 ]
-             )),
-            ('FEATURE feature vendor version exp_date num_lic SIGN="sign"', "Minimal feature, SIGN quoted",
-             generate_expected_tree(
-                 ['feature',
-                     ('FEAT_NAME', 'feature'),
-                      ('FEAT_VENDOR', 'vendor'),
-                      ('FEAT_VERSION', 'version'),
-                      ('EXP_DATE', 'exp_date'),
-                      ('NUM_LIC', 'num_lic'),
-                      ['feat_optional',
-                          ('KEY', 'SIGN'),
-                          ('STRING', '"sign"')
-                      ]
-                 ]
-             )),
-            ('FEATURE feature vendor version exp_date num_lic SIGN="first \\\n   second"', "Minimal feature, SIGN quoted ith line break",
-             generate_expected_tree(
-                 ['feature',
-                     ('FEAT_NAME', 'feature'),
-                      ('FEAT_VENDOR', 'vendor'),
-                      ('FEAT_VERSION', 'version'),
-                      ('EXP_DATE', 'exp_date'),
-                      ('NUM_LIC', 'num_lic'),
-                      ['feat_optional',
-                          ('KEY', 'SIGN'),
-                          ('STRING', '"first \\\n   second"')
-                      ]
-                 ]
-             ))
+        base_feature = 'FEATURE feature vendor version exp_date num_lic '
+        base_expected_tree = \
+            ['feature',
+             ('FEAT_NAME', 'feature'),
+             ('FEAT_VENDOR', 'vendor'),
+             ('FEAT_VERSION', 'version'),
+             ('EXP_DATE', 'exp_date'),
+             ('NUM_LIC', 'num_lic'),
+             ]
+
+        tests_inputs = [
+            ("Minimal feature, SIGN unquoted",
+             'SIGN=sign',
+             ['feat_optional',
+              ('KEY', 'SIGN'),
+              ('NON_STRING', 'sign')
+              ]
+             ),
+
+            ("Minimal feature, SIGN quoted",
+             'SIGN="sign"',
+             ['feat_optional',
+              ('KEY', 'SIGN'),
+              ('STRING', '"sign"')
+              ]
+             ),
+
+            ("Minimal feature, SIGN multilines",
+             'SIGN="first \\\n   second"',
+             ['feat_optional',
+              ('KEY', 'SIGN'),
+          ('STRING', '"first \\\n   second"')
+              ]
+             ),
         ]
+
+        data = [(base_feature + feat_comp, desc, generate_expected_tree(base_expected_tree+[tree_comp]))
+                for desc, feat_comp, tree_comp in tests_inputs]
+
+        logging.debug(data)
+
+        # data = [
+        #     ('FEATURE feature vendor version exp_date num_lic SIGN=sign', "Minimal feature",
+        #      generate_expected_tree(
+        #          ['feature',
+        #              ('FEAT_NAME', 'feature'),
+        #               ('FEAT_VENDOR', 'vendor'),
+        #               ('FEAT_VERSION', 'version'),
+        #               ('EXP_DATE', 'exp_date'),
+        #               ('NUM_LIC', 'num_lic'),
+        #               ['feat_optional',
+        #                   ('KEY', 'SIGN'),
+        #                   ('NON_STRING', 'sign')
+        #               ]
+        #          ]
+        #      )),
+        #     ('FEATURE feature vendor version exp_date num_lic SIGN="sign"', "Minimal feature, SIGN quoted",
+        #      generate_expected_tree(
+        #          ['feature',
+        #              ('FEAT_NAME', 'feature'),
+        #               ('FEAT_VENDOR', 'vendor'),
+        #               ('FEAT_VERSION', 'version'),
+        #               ('EXP_DATE', 'exp_date'),
+        #               ('NUM_LIC', 'num_lic'),
+        #               ['feat_optional',
+        #                   ('KEY', 'SIGN'),
+        #                   ('STRING', '"sign"')
+        #               ]
+        #          ]
+        #      )),
+        #     ('FEATURE feature vendor version exp_date num_lic SIGN="first \\\n   second"', "Minimal feature, SIGN quoted ith line break",
+        #      generate_expected_tree(
+        #          ['feature',
+        #              ('FEAT_NAME', 'feature'),
+        #               ('FEAT_VENDOR', 'vendor'),
+        #               ('FEAT_VERSION', 'version'),
+        #               ('EXP_DATE', 'exp_date'),
+        #               ('NUM_LIC', 'num_lic'),
+        #               ['feat_optional',
+        #                   ('KEY', 'SIGN'),
+        #                   ('STRING', '"first \\\n   second"')
+        #               ]
+        #          ]
+        #      ))
+        # ]
 
         for sample, info, expected in data:
             with self.subTest(s=info):
@@ -355,7 +396,6 @@ class TestParse(unittest.TestCase):
                 logging.debug(tree.pretty())
 
                 self.assertEqual(expected, tree)
-
 
 
 if __name__ == '__main__':
