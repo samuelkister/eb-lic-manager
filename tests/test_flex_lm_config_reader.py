@@ -3,7 +3,7 @@ import sys
 import unittest
 import logging
 
-import eb_lic_manager.flex_lm.config_file as p
+import eb_lic_manager.flex_lm.config_file_reader as p
 
 from lark.tree import Tree
 from lark.lexer import Token
@@ -288,6 +288,176 @@ class TestParse(unittest.TestCase):
 
                 self.assertFalse(j.children)
 
+    def test_feature(self):
+        """
+        Server lines are decoded
+        :return: Nothing
+
+        {FEATURE|INCREMENT} feature vendor feat_version exp_date \
+            num_lic SIGN=sign [optional_attributes]
+
+        optional_attribute can be KEY, KEY=VALUE, KEY="VALUE STRING"
+        """
+        # TODO: extend tests (add optional features)
+
+        # set_logging_level_to(logging.DEBUG)
+
+        base_feature = 'FEATURE feature vendor version exp_date num_lic '
+        base_expected_tree = \
+            ['feature',
+             ('FEAT_NAME', 'feature'),
+             ('FEAT_VENDOR', 'vendor'),
+             ('FEAT_VERSION', 'version'),
+             ('EXP_DATE', 'exp_date'),
+             ('NUM_LIC', 'num_lic'),
+             ]
+
+        tests_inputs = [
+            ("Minimal feature, SIGN unquoted",
+             'SIGN=sign',
+             ['feat_optional',
+              ('KEY', 'SIGN'),
+              ('NON_STRING', 'sign')
+              ]
+             ),
+
+            ("Minimal feature, SIGN quoted",
+             'SIGN="sign"',
+             ['feat_optional',
+              ('KEY', 'SIGN'),
+              ('STRING', '"sign"')
+              ]
+             ),
+
+            ("Minimal feature, SIGN multilines",
+             'SIGN="first \\\n   second"',
+             ['feat_optional',
+              ('KEY', 'SIGN'),
+          ('STRING', '"first \\\n   second"')
+              ]
+             ),
+        ]
+
+        data = [(base_feature + feat_comp, desc, generate_expected_tree(base_expected_tree+[tree_comp]))
+                for desc, feat_comp, tree_comp in tests_inputs]
+
+        logging.debug(data)
+
+        for sample, info, expected in data:
+            with self.subTest(s=info):
+                tree = p.parse(sample)
+                logging.debug(sample)
+                logging.debug(tree)
+                logging.debug(tree.pretty())
+
+                self.assertEqual(expected, tree)
+
+
+class TestTransformer(unittest.TestCase):
+    def setUp(self) -> None:
+        set_logging_level_to(STANDARD_LOGGING_LEVEL)
+
+    @unittest.skip("asserts TBD")
+    def test_complete_config_file(self):
+        # set_logging_level_to(logging.DEBUG)
+        with open("../Samples/aucotec.lic") as f:
+            sample_config_file = f.read()
+
+        j = p.parse(sample_config_file)
+
+        logging.debug(j)
+        logging.debug(j.pretty())
+
+    def test_empty_tree(self):
+
+        self.assertTrue(True)
+
+    @unittest.skip("TBD")
+    def test_single_server(self):
+        """
+        Server lines are decoded
+        :return: Nothing
+        """
+        # set_logging_level_to(logging.DEBUG)
+
+        tree = generate_expected_tree([Tree('config', [
+            Tree('server',
+                 [Token('SERVER_NAME', 'my_server1'),
+                  Token('SERVER_ID', '17007ea8'),
+                  Token('SERVER_PORT', '11987'),
+                  Token('SERVER_REST', 'PRIMARY_IS_MASTER HEARTBEAT_INTERVAL=1')]),
+        ])])
+
+
+    @unittest.skip("TBD")
+    def test_vendor(self):
+        """
+        Vendor lines are decoded
+        :return: Nothing
+        """
+
+        # VENDOR vendor[vendor_daemon_path] \
+        #     [[OPTIONS =]options_file_path] [[PORT =]port]
+
+        samples = [
+            ('VENDOR vendor_name', "Only vendor name"),
+            ('VENDOR vendor_name deamon_path', "Vendor name, deamon path"),
+            ('VENDOR vendor_name deamon_path OPTIONS="/path/to/file.opt"', "Vendor name, 'OPTIONS='+path"),
+            ('VENDOR vendor_name deamon_path OPTIONS="/path/to/file.opt" PORT=1234',
+             "Vendor name, 'OPTIONS='+path, 'PORT='+port")
+        ]
+
+        values = [
+            {'VENDOR_NAME': 'vendor_name',
+             'VENDOR_OPTION': ['deamon_path', 'OPTIONS="/path/to/file.opt"', 'PORT=1234']},
+        ]
+
+        for s in samples:
+
+            with self.subTest(s=s[1]):
+                j = p.parse(s[0])
+
+                logging.debug(j)
+                logging.debug(j.pretty())
+
+                children = j.children
+
+                for i in range(len(children)):
+                    child = children[i]
+                    d = values[i]
+
+                    logging.debug(d)
+
+                    for token in children[i].children:
+                        expected = d[token.type]
+                        if isinstance(expected, list):
+                            count[token.type] += 1
+                            expected = expected[count[token.type]]
+
+                        self.assertEqual(token.value, expected)
+            count = {'VENDOR_OPTION': -1}
+
+    @unittest.skip("TBD")
+    def test_use_server(self):
+        """
+        USE_SERVER should be ignored.
+        Parsing return an empty list
+        :return: Nothing
+        """
+        samples = [
+            ("USE_SERVER", "without newline"),
+            ("USE_SERVER\n", "with newline"),
+        ]
+
+        for s in samples:
+            with self.subTest(s=s[1]):
+                j = p.parse(s[0])
+                logging.debug(j)
+                logging.debug(j.pretty())
+
+                self.assertFalse(j.children)
+
+    @unittest.skip("TBD")
     def test_feature(self):
         """
         Server lines are decoded
