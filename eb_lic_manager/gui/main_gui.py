@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import datetime
 import tkinter as tk
 
 # Todo : display list of used licences, grouped by licenses or users
@@ -8,8 +8,9 @@ import tkinter as tk
 # Todo :  + get list of used licences -> need bindings to FlexLm server API (TBD)
 # Todo :  + aggregate all lists (TBD)
 # Todo :  + display aggregated list -> In form of a tree? (TBD)
+from eb_lic_manager.gui.context import Context, LicencesProvider, UsersProvider
 from eb_lic_manager.gui.licenses_in_use.data_provider import AbstractDataProvider
-from eb_lic_manager.gui.licenses_in_use.licences_in_use import LicensesInUseGUI
+from eb_lic_manager.gui.licenses_in_use.licences_in_use import LicensesInUseGUI, LicencesInUse
 
 
 class MainGUI(tk.Frame):
@@ -17,12 +18,10 @@ class MainGUI(tk.Frame):
         super().__init__(master)
         self.context = context
 
-        self.context.set_licences_in_use_provider(DummyDataProvider())
-
         self.create_widgets()
 
     def create_widgets(self):
-        self.liu = LicensesInUseGUI(self.context.licences_in_use_provider, self)
+        self.liu = LicensesInUseGUI(self.context.licences_in_use, self)
         self.liu.grid(row=1, column=0)
         self.pack()
 
@@ -30,29 +29,26 @@ class MainGUI(tk.Frame):
         return self.win
 
 
-class Context(object):
-    def __init__(self):
-        self.licences_in_use_provider = None
-
-    def set_licences_in_use_provider(self, provider: AbstractDataProvider):
-        self.licences_in_use_provider = provider
-
-
 class DummyDataProvider(AbstractDataProvider):
+    def __init__(self, context: Context):
+        super().__init__()
+        self.context = context
+
     def get_data(self):
-        return "Data line 1\nData line 2"
+        liu_holder = LicencesInUse(self.context)
+        liu_holder.clear_licences_in_use()
+        for lic in ["lic1", "lic2", "lic3"]:
+            for user in ["user1", "user2", "user3"]:
+                liu_holder.add_license_user(lic, user, datetime.datetime.now())
 
-    def add_data_change_listener(self, listener):
-        super().add_data_change_listener(listener)
-        listener()
-
-    def remove_data_change_listener(self, listener):
-        super().remove_data_change_listener(listener)
+        return liu_holder
 
 
 if __name__ == '__main__':
     context = Context()
-    context.data_provider = DummyDataProvider()
+    context.set_licences_in_use_provider(DummyDataProvider(context))
+    context.set_licenses_provider(LicencesProvider())
+    context.set_users_provider(UsersProvider())
 
     root = tk.Tk()
     root.title("EB Licenses Manager")
