@@ -36,10 +36,10 @@ class DummyDataProvider(AbstractDataProvider):
 
     def get_data(self):
         liu_holder = LicencesInUse(self.context)
-        liu_holder.clear_licences_in_use()
+        liu_holder.clear()
         for lic in ["lic1", "lic2", "lic3"]:
             for user in ["user1", "user2", "user3"]:
-                liu_holder.add_license_user(lic, user, datetime.datetime.now())
+                liu_holder.add(lic, user, datetime.datetime.now())
 
         return liu_holder
 
