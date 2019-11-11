@@ -8,6 +8,8 @@ import eb_lic_manager.flex_lm.config_file_reader as p
 from lark.tree import Tree
 from lark.lexer import Token
 
+from eb_lic_manager.gui.context import Context
+
 STANDARD_LOGGING_LEVEL = logging.INFO
 logging.basicConfig(level=STANDARD_LOGGING_LEVEL, stream=sys.stderr)
 
@@ -290,7 +292,7 @@ class TestParse(unittest.TestCase):
 
     def test_feature(self):
         """
-        Server lines are decoded
+        Feature lines are decoded
         :return: Nothing
 
         {FEATURE|INCREMENT} feature vendor feat_version exp_date \
@@ -333,7 +335,7 @@ class TestParse(unittest.TestCase):
              'SIGN="first \\\n   second"',
              ['feat_optional',
               ('KEY', 'SIGN'),
-          ('STRING', '"first \\\n   second"')
+          ('STRING', '"first second"')
               ]
              ),
         ]
@@ -356,6 +358,8 @@ class TestParse(unittest.TestCase):
 class TestTransformer(unittest.TestCase):
     def setUp(self) -> None:
         set_logging_level_to(STANDARD_LOGGING_LEVEL)
+        self.context = Context()
+        self.transformer = p.ConfigTransformer(self.context)
 
     @unittest.skip("asserts TBD")
     def test_complete_config_file(self):
@@ -369,24 +373,78 @@ class TestTransformer(unittest.TestCase):
         logging.debug(j.pretty())
 
     def test_empty_tree(self):
-
         self.assertTrue(True)
 
-    @unittest.skip("TBD")
     def test_single_server(self):
         """
-        Server lines are decoded
-        :return: Nothing
+        One single server
         """
         # set_logging_level_to(logging.DEBUG)
 
-        tree = generate_expected_tree([Tree('config', [
-            Tree('server',
-                 [Token('SERVER_NAME', 'my_server1'),
-                  Token('SERVER_ID', '17007ea8'),
-                  Token('SERVER_PORT', '11987'),
-                  Token('SERVER_REST', 'PRIMARY_IS_MASTER HEARTBEAT_INTERVAL=1')]),
-        ])])
+        server_name = 'my_server1'
+        server_id = '17007ea8'
+        server_port = '11987'
+        server_rest = 'PRIMARY_IS_MASTER HEARTBEAT_INTERVAL=1'
+
+        tree = generate_expected_tree(
+            ['server',
+                ('SERVER_NAME', server_name),
+                ('SERVER_ID', server_id),
+                ('SERVER_PORT', server_port),
+                ('SERVER_REST', server_rest)
+             ])
+
+        logging.debug(tree)
+        logging.debug(tree.pretty())
+
+        self.transformer.transform(tree)
+
+        servers = self.context.get_servers()
+
+        self.assertEqual(1, len(servers), "No single server created")
+
+        server = servers[0]
+
+        self.assertEqual(server_name, server.name)
+        self.assertEqual(server_id, server.id)
+        self.assertEqual(server_port, server.port)
+
+    def test_multiple_server(self):
+        """
+        Three server
+        """
+        # set_logging_level_to(logging.DEBUG)
+
+        server_name = ['my_server1', 'my_server2', 'my_server3']
+        server_id = ['17007ea8', '27007ea8', '37007ea8']
+        server_port = ['11987', '22987', '33987']
+
+        servers_tree = ['config']
+        for x in range(3):
+            servers_tree.append(
+                ['server',
+                    ('SERVER_NAME', server_name[x]),
+                    ('SERVER_ID', server_id[x]),
+                    ('SERVER_PORT', server_port[x])
+                ])
+
+        tree = generate_tree(servers_tree)
+
+        logging.debug(tree)
+        logging.debug(tree.pretty())
+
+        self.transformer.transform(tree)
+
+        servers = self.context.get_servers()
+
+        self.assertEqual(3, len(servers), "Wrong amount of servers created")
+
+        for x in range(3):
+            server = servers[x]
+
+            self.assertEqual(server_name[x], server.name)
+            self.assertEqual(server_id[x], server.id)
+            self.assertEqual(server_port[x], server.port)
 
 
     @unittest.skip("TBD")

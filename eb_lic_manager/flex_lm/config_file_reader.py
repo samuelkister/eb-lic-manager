@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+import re
 
-from lark import Lark
+from lark import Lark, Transformer, Tree
+
+from eb_lic_manager.gui.context import Context
 
 config_grammar = r"""
     config: (_EOL
@@ -57,8 +60,54 @@ config_grammar = r"""
 
 # TODO: Write+Test transformer that generate a direct usable "config_file" object
 config_parser = Lark(config_grammar, parser='lalr', start='config')
-# TODO: rename "parse" in something more unique
-parse = config_parser.parse
+
+
+def parse(text: str) -> Tree:
+    """
+    Parse a config file content
+    :param text: the content of the config file as a string
+    :return: A lark Tree
+    """
+
+    # Remove all line continuation from the original
+    text = re.sub(r"\s*\\\s*", " ", text, flags=re.MULTILINE)
+
+    return config_parser.parse(text)
+
+
+class ConfigTransformer(Transformer):
+    def __init__(self, context: Context):
+        super().__init__()
+        self._context = context
+
+    def server(self, children):
+        server = self._context.create_new_server()
+
+        switcher = {
+            'SERVER_NAME': lambda server, name: server.set_name(name),
+            'SERVER_ID': lambda server, id: server.set_id(id),
+            'SERVER_PORT': lambda server, port: server.set_port(port)
+        }
+
+        for token in children:
+            fun = switcher.get(token.type)
+            if fun:
+                fun(server, token.value)
+
+
+    # def vendor(self, child):
+    #     print("VENDOR: ")
+    #     print(child)
+    #
+    # def feature(self, child):
+    #     print("FEATURE: ")
+    #     print(child)
+    #
+    # def feat_optional(self, child):
+    #     print("FEATURE OPTIONAL: ")
+    #     print(child)
+    #     return "Feature optional"
+
 
 
 if __name__ == '__main__':
