@@ -229,9 +229,10 @@ class TestParse(unittest.TestCase):
         Vendor lines are decoded
         :return: Nothing
         """
+        # ToDo: space in daemon path or options path
 
         # VENDOR vendor[vendor_daemon_path] \
-        #     [[OPTIONS =]options_file_path] [[PORT =]port]
+        #     [[OPTIONS=]options_file_path] [[PORT=]port]
 
         samples = [
             ('VENDOR vendor_name', "Only vendor name"),
@@ -446,54 +447,39 @@ class TestTransformer(unittest.TestCase):
             self.assertEqual(server_id[x], server.id)
             self.assertEqual(server_port[x], server.port)
 
-
-    @unittest.skip("TBD")
     def test_vendor(self):
         """
         Vendor lines are decoded
-        :return: Nothing
+
+        # VENDOR vendor [vendor_daemon_path] \
+        #     [[OPTIONS=]options_file_path] [[PORT=]port]
         """
 
-        # VENDOR vendor[vendor_daemon_path] \
-        #     [[OPTIONS =]options_file_path] [[PORT =]port]
+        # set_logging_level_to(logging.DEBUG)
 
-        samples = [
-            ('VENDOR vendor_name', "Only vendor name"),
-            ('VENDOR vendor_name deamon_path', "Vendor name, deamon path"),
-            ('VENDOR vendor_name deamon_path OPTIONS="/path/to/file.opt"', "Vendor name, 'OPTIONS='+path"),
-            ('VENDOR vendor_name deamon_path OPTIONS="/path/to/file.opt" PORT=1234',
-             "Vendor name, 'OPTIONS='+path, 'PORT='+port")
-        ]
+        vendor_name = 'my_vendor'
+        daemon_path = 'my_daemon_path'
+        option_file_path = '/option/file/path'
+        daemon_port = '123654'
 
-        values = [
-            {'VENDOR_NAME': 'vendor_name',
-             'VENDOR_OPTION': ['deamon_path', 'OPTIONS="/path/to/file.opt"', 'PORT=1234']},
-        ]
+        tree = generate_expected_tree(
+            ['vendor',
+                ('VENDOR_NAME', vendor_name)
+             ])
+        self.transformer.transform(tree)
 
-        for s in samples:
+        vendor = self.context.get_vendor()
+        self.assertEqual(vendor_name, vendor.name)
 
-            with self.subTest(s=s[1]):
-                j = p.parse(s[0])
+        tree = generate_expected_tree(
+            ['vendor',
+                ('VENDOR_NAME', vendor_name),
+                ('VENDOR_OPTION', vendor_name)
+             ])
+        self.transformer.transform(tree)
 
-                logging.debug(j)
-                logging.debug(j.pretty())
-
-                children = j.children
-
-                for i in range(len(children)):
-                    child = children[i]
-                    d = values[i]
-
-                    logging.debug(d)
-
-                    for token in children[i].children:
-                        expected = d[token.type]
-                        if isinstance(expected, list):
-                            count[token.type] += 1
-                            expected = expected[count[token.type]]
-
-                        self.assertEqual(token.value, expected)
-            count = {'VENDOR_OPTION': -1}
+        vendor = self.context.get_vendor()
+        self.assertEqual(vendor_name, vendor.name)
 
     @unittest.skip("TBD")
     def test_use_server(self):
