@@ -8,9 +8,9 @@ import tkinter as tk
 # Todo :  + get list of used licences -> need bindings to FlexLm server API (TBD)
 # Todo :  + aggregate all lists (TBD)
 # Todo :  + display aggregated list -> In form of a tree? (TBD)
-from eb_lic_manager.gui.context import Context, LicencesProvider, UsersProvider
-from eb_lic_manager.gui.licenses_in_use.data_provider import AbstractDataProvider
-from eb_lic_manager.gui.licenses_in_use.licences_in_use import LicensesInUseGUI, LicencesInUse
+from eb_lic_manager.application.context import Context, LicencesProvider, UsersProvider
+from eb_lic_manager.data_provider.licenses_in_use import AbstractDataProvider
+from eb_lic_manager.data_provider.licenses_in_use import LicensesInUseGUI, LicencesInUse
 
 
 class MainGUI(tk.Frame):

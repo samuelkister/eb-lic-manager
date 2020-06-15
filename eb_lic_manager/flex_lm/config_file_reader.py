@@ -1,66 +1,48 @@
 # -*- coding: utf-8 -*-
 import re
-
 from lark import Lark, Transformer, Tree
 
-from eb_lic_manager.gui.context import Context
+"""
+All classes needed to read and transform a flex-LM config file
+to Python objects.
+"""
 
 config_grammar = r"""
     config: (_EOL
         | _COMMENT
+        | _USE_SERVER
         | server
         | vendor
-        | _USE_SERVER
         | feature)*
     
     _EOL: /[ \t]*/ NEWLINE
     
     _COMMENT: "#" /[^\n]*/ [_EOL]
     
-    server: "SERVER "i SERVER_NAME SERVER_ID SERVER_PORT [SERVER_REST] [_EOL]
-    SERVER_NAME: NON_WHITESPACE
-    SERVER_ID: NON_WHITESPACE
-    SERVER_PORT: INT
-    SERVER_REST: /[^\n]+/
-    
-    vendor: "VENDOR "i VENDOR_NAME [VENDOR_OPTION*] [_EOL]
-    VENDOR_NAME: NON_WHITESPACE
-    VENDOR_OPTION: NON_WHITESPACE
-    
     _USE_SERVER: "USE_SERVER" [_EOL]
     
-    feature: "FEATURE "i _feature_param [_EOL]
-    _feature_param: FEAT_NAME FEAT_VENDOR FEAT_VERSION EXP_DATE NUM_LIC [feat_optional*]
-    
-    FEAT_NAME: NON_WHITESPACE
-    FEAT_VENDOR: NON_WHITESPACE
-    FEAT_VERSION: NON_WHITESPACE
-    EXP_DATE: NON_WHITESPACE
-    NUM_LIC: NON_WHITESPACE
-    feat_optional: KEY ["=" _value]
-    _value: STRING | NON_STRING
-    KEY: CNAME
-    
-    WS: /[ \t\f\r]+/
-    NON_WHITESPACE: /\S+/
-    
-    NON_STRING: /[^"]\S+/
-    STRING: "\"" /.*?[^"]/* "\""
+    server: "SERVER" parameter*
+    vendor: "VENDOR" parameter*
+    feature: ("LIC" | "FEATURE") parameter*
 
-    _LINE_CONTINUATION: /\\[ \t\f\r]*\n/ [WS]
+    parameter: KEY? _value
+    _value: NON_STRING | _string
+
+    NON_STRING: /[^"]\S*/
+    _string: STRING
+    KEY: CNAME _EQUAL
+    _EQUAL: WS* "=" WS*
+
+    %import common.ESCAPED_STRING -> STRING
+    %import common.WS
+    %import common.NEWLINE
+    %import common.CNAME
     
     %ignore WS
-    %ignore _LINE_CONTINUATION
-    
-    %import common.NEWLINE
-    // %import common.ESCAPED_STRING
-    %import common.INT
-    %import common.CNAME
 """
 
 # TODO: Write+Test transformer that generate a direct usable "config_file" object
 config_parser = Lark(config_grammar, parser='lalr', start='config')
-
 
 def parse(text: str) -> Tree:
     """
@@ -76,23 +58,53 @@ def parse(text: str) -> Tree:
 
 
 class ConfigTransformer(Transformer):
-    def __init__(self, context: Context):
+    """
+    Convert the lark tree of a parsed config file to a config object
+    """
+
+    def __init__(self, config_factory):
         super().__init__()
-        self._context = context
+        self._factory = config_factory
+
+    def get_config(self):
+        self._factory.get_config()
+
+    def build_param_from_tree(self, children):
+        has_not_named_args = False
+        args = []
+        named_args = []
+
+        # for token in children:
+        #     if token.type() == "parameter":
+        #
+        #     fun = switcher.get(token.type)
+        #     if fun:
+        #         fun(server, token.value)
+
+
+    def parameter(self, children):
+        key = None
+        value = None
+        for token in children:
+            if token.type == "KEY":
+                key = token.value[:-2]
+            elif token.type == "STRING":
+                value = token.value[2:-2]
+            elif token.type == "NON_STRING":
+                value = token.value
+            else:
+                raise Exception("Unknown argument type")
 
     def server(self, children):
-        server = self._context.create_new_server()
-
-        switcher = {
-            'SERVER_NAME': lambda server, name: server.set_name(name),
-            'SERVER_ID': lambda server, id: server.set_id(id),
-            'SERVER_PORT': lambda server, port: server.set_port(port)
-        }
+        named_args, args = self.build_args_from_list(children)
 
         for token in children:
+
             fun = switcher.get(token.type)
             if fun:
                 fun(server, token.value)
+
+        return self._factory.add_new_server(named_args, args)
 
 
     # def vendor(self, child):
@@ -107,7 +119,6 @@ class ConfigTransformer(Transformer):
     #     print("FEATURE OPTIONAL: ")
     #     print(child)
     #     return "Feature optional"
-
 
 
 if __name__ == '__main__':

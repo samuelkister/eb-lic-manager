@@ -5,10 +5,9 @@ from collections import namedtuple
 from itertools import groupby
 from operator import attrgetter
 from tkinter import ttk
-from tkinter.ttk import Treeview
 
-from eb_lic_manager.gui.context import User, License
-from eb_lic_manager.gui.licenses_in_use.data_provider import AbstractDataProvider
+from eb_lic_manager.application.context import User, License
+from eb_lic_manager.data_provider.licenses_in_use import AbstractDataProvider
 
 # ToDo : GOAL -> Display the licences in use in a tree, grouped by Licence or user
 

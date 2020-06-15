@@ -1,6 +1,4 @@
-import ipaddress
-
-from eb_lic_manager.gui.licenses_in_use.data_provider import AbstractDataProvider
+from eb_lic_manager.data_provider.licenses_in_use import AbstractDataProvider
 
 
 class Server(object):
@@ -51,7 +49,7 @@ class License(object):
         self.name = name
 
     def __lt__(self, other):
-        return  self.id < other.id
+        return self.id < other.id
 
 
 class LicencesProvider(AbstractDataProvider):

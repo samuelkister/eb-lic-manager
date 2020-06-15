@@ -8,7 +8,7 @@ import eb_lic_manager.flex_lm.config_file_reader as p
 from lark.tree import Tree
 from lark.lexer import Token
 
-from eb_lic_manager.gui.context import Context
+# from eb_lic_manager.application.context import Context
 
 STANDARD_LOGGING_LEVEL = logging.INFO
 logging.basicConfig(level=STANDARD_LOGGING_LEVEL, stream=sys.stderr)
@@ -35,7 +35,10 @@ def generate_tree(construct):
             return Tree(construct[0], [generate_tree(el) for el in construct[1:]])
 
 
-def generate_expected_tree(construct=[]):
+def generate_expected_tree(construct=None):
+    if not construct:
+        return generate_tree(['config'])
+
     return generate_tree(['config', construct])
 
 
@@ -102,12 +105,27 @@ class TestTreeGenerator(unittest.TestCase):
 # TODO: replace tests of values with Lark.Tree comparison where it simplifies tests
 #  (see test_server)
 
-class TestParse(unittest.TestCase):
+class TestParser(unittest.TestCase):
     def setUp(self) -> None:
         set_logging_level_to(STANDARD_LOGGING_LEVEL)
 
+        self.common_arguments = 'unquoted_value 1 "quoted value" 235 string_quoted="key quoted" digit=6 number=8945135 ' \
+                                'key=value_for_key'
+        self.common_arguments_tree = [
+            ['parameter', ('NON_STRING', 'unquoted_value')],
+            ['parameter', ('NON_STRING', '1')],
+            ['parameter', ('STRING', '"quoted value"')],
+            ['parameter', ('NON_STRING', '235')],
+            ['parameter', ('KEY', 'string_quoted='), ('STRING', '"key quoted"')],
+            ['parameter', ('KEY', 'digit='), ('NON_STRING', '6')],
+            ['parameter', ('KEY', 'number='), ('NON_STRING', '8945135')],
+            ['parameter', ('KEY', 'key='), ('NON_STRING', 'value_for_key')],
+        ]
+
     def test_complete_config_file(self):
-        # set_logging_level_to(logging.DEBUG)
+        # Test just no crash
+
+        set_logging_level_to(logging.DEBUG)
         with open("../Samples/aucotec.lic") as f:
             sample_config_file = f.read()
 
@@ -116,36 +134,26 @@ class TestParse(unittest.TestCase):
         logging.debug(j)
         logging.debug(j.pretty())
 
-    def test_empty_lines(self):
+    def test_ignored_elements(self):
         """
-        Empty lines should be implicitely ignored.
-        Parsing return an empty list
+        Test the elements that should be ignored by the parser
+        (i.e. those that don't generate a node in the tree)
         :return: Nothing
         """
-        samples = [("", "nothing"),
-                   ("\n", "newline"),
-                   ("   \n", "spaces newline"),
-                   ("\n\n", "two newlines"),
-                   ("\n   \n", "newline, spaces newline"),
-                   ("\t\n   \n", "tab newline, spaces newline"),
-                   ("  \t  \n   \n", "spaces tab spaces newline, spaces newline")
-                   ]
+        # set_logging_level_to(logging.DEBUG)
 
-        for s in samples:
-            with self.subTest(s=s[1]):
-                j = p.parse(s[0])
-                logging.debug(j)
-                logging.debug(j.pretty())
+        # Defining the list of the ignored token
+        ignored_token = [
+            # Empty lines
+            ("", "nothing"),
+            ("\n", "newline"),
+            ("   \n", "spaces newline"),
+            ("\n\n", "two newlines"),
+            ("\n   \n", "newline, spaces newline"),
+            ("\t\n   \n", "tab newline, spaces newline"),
+            ("  \t  \n   \n", "spaces tab spaces newline, spaces newline"),
 
-                self.assertFalse(j.children)
-
-    def test_comments(self):
-        """
-        Comments should be ignored.
-        Parsing return an empty list
-        :return: Nothing
-        """
-        samples = [
+            # Comments
             ("# only one comment", "one comment"),
             ("# only one comment\n", "one comment and newline"),
             ("# one comment followed by empty line\n" \
@@ -155,205 +163,46 @@ class TestParse(unittest.TestCase):
              "# one comment with empty line before an after\n" \
              "    \n" \
              "# One more comment", "Comments with empty lines before and after"),
-        ]
 
-        for s in samples:
-            with self.subTest(s=s[1]):
-                j = p.parse(s[0])
-                logging.debug(j)
-                logging.debug(j.pretty())
-
-                self.assertFalse(j.children)
-
-    def test_server(self):
-        """
-        Server lines are decoded
-        :return: Nothing
-        """
-        # set_logging_level_to(logging.DEBUG)
-
-        samples = [
-            ("SERVER my_server1 17007ea8 11987", "Single server"),
-            ("SERVER my_server1 17007ea8 11987 PRIMARY_IS_MASTER HEARTBEAT_INTERVAL=1", "Single server with options"),
-            ("SERVER my_server1 17007ea8 11987\n" \
-             "SERVER my_server2 27007ea8 21987\n" \
-             "SERVER my_server3 37007ea8 31987", "Three server")
-        ]
-
-        trees = [Tree('config', [
-            Tree('server',
-                 [Token('SERVER_NAME', 'my_server1'),
-                  Token('SERVER_ID', '17007ea8'),
-                  Token('SERVER_PORT', '11987'),
-                  ])
-        ]),
-                 Tree('config', [
-                     Tree('server',
-                          [Token('SERVER_NAME', 'my_server1'),
-                           Token('SERVER_ID', '17007ea8'),
-                           Token('SERVER_PORT', '11987'),
-                           Token('SERVER_REST', 'PRIMARY_IS_MASTER HEARTBEAT_INTERVAL=1')]),
-                 ]),
-                 Tree('config', [
-                     Tree('server',
-                          [Token('SERVER_NAME', 'my_server1'),
-                           Token('SERVER_ID', '17007ea8'),
-                           Token('SERVER_PORT', '11987'),
-                           ]
-                          ),
-                     Tree('server',
-                          [Token('SERVER_NAME', 'my_server2'),
-                           Token('SERVER_ID', '27007ea8'),
-                           Token('SERVER_PORT', '21987'),
-                           ]
-                          ),
-                     Tree('server',
-                          [Token('SERVER_NAME', 'my_server3'),
-                           Token('SERVER_ID', '37007ea8'),
-                           Token('SERVER_PORT', '31987'),
-                           ]
-                          ),
-                 ])
-                 ]
-
-        for sample, expected in zip(samples, trees):
-            with self.subTest(s=sample[1]):
-                tree = p.parse(sample[0])
-                logging.debug(tree)
-                logging.debug(tree.pretty())
-
-                self.assertEqual(expected, tree)
-
-    def test_vendor(self):
-        """
-        Vendor lines are decoded
-        :return: Nothing
-        """
-        # ToDo: space in daemon path or options path
-
-        # VENDOR vendor[vendor_daemon_path] \
-        #     [[OPTIONS=]options_file_path] [[PORT=]port]
-
-        samples = [
-            ('VENDOR vendor_name', "Only vendor name"),
-            ('VENDOR vendor_name deamon_path', "Vendor name, deamon path"),
-            ('VENDOR vendor_name deamon_path OPTIONS="/path/to/file.opt"', "Vendor name, 'OPTIONS='+path"),
-            ('VENDOR vendor_name deamon_path OPTIONS="/path/to/file.opt" PORT=1234',
-             "Vendor name, 'OPTIONS='+path, 'PORT='+port")
-        ]
-
-        values = [
-            {'VENDOR_NAME': 'vendor_name',
-             'VENDOR_OPTION': ['deamon_path', 'OPTIONS="/path/to/file.opt"', 'PORT=1234']},
-        ]
-
-        for s in samples:
-
-            with self.subTest(s=s[1]):
-                j = p.parse(s[0])
-
-                logging.debug(j)
-                logging.debug(j.pretty())
-
-                children = j.children
-
-                for i in range(len(children)):
-                    child = children[i]
-                    d = values[i]
-
-                    logging.debug(d)
-
-                    for token in children[i].children:
-                        expected = d[token.type]
-                        if isinstance(expected, list):
-                            count[token.type] += 1
-                            expected = expected[count[token.type]]
-
-                        self.assertEqual(token.value, expected)
-            count = {'VENDOR_OPTION': -1}
-
-    def test_use_server(self):
-        """
-        USE_SERVER should be ignored.
-        Parsing return an empty list
-        :return: Nothing
-        """
-        samples = [
+            # USE SERVER
             ("USE_SERVER", "without newline"),
             ("USE_SERVER\n", "with newline"),
         ]
 
-        for s in samples:
-            with self.subTest(s=s[1]):
-                j = p.parse(s[0])
-                logging.debug(j)
-                logging.debug(j.pretty())
+        empty_tree = generate_expected_tree()
 
-                self.assertFalse(j.children)
-
-    def test_feature(self):
-        """
-        Feature lines are decoded
-        :return: Nothing
-
-        {FEATURE|INCREMENT} feature vendor feat_version exp_date \
-            num_lic SIGN=sign [optional_attributes]
-
-        optional_attribute can be KEY, KEY=VALUE, KEY="VALUE STRING"
-        """
-        # TODO: extend tests (add optional features)
-
-        # set_logging_level_to(logging.DEBUG)
-
-        base_feature = 'FEATURE feature vendor version exp_date num_lic '
-        base_expected_tree = \
-            ['feature',
-             ('FEAT_NAME', 'feature'),
-             ('FEAT_VENDOR', 'vendor'),
-             ('FEAT_VERSION', 'version'),
-             ('EXP_DATE', 'exp_date'),
-             ('NUM_LIC', 'num_lic'),
-             ]
-
-        tests_inputs = [
-            ("Minimal feature, SIGN unquoted",
-             'SIGN=sign',
-             ['feat_optional',
-              ('KEY', 'SIGN'),
-              ('NON_STRING', 'sign')
-              ]
-             ),
-
-            ("Minimal feature, SIGN quoted",
-             'SIGN="sign"',
-             ['feat_optional',
-              ('KEY', 'SIGN'),
-              ('STRING', '"sign"')
-              ]
-             ),
-
-            ("Minimal feature, SIGN multilines",
-             'SIGN="first \\\n   second"',
-             ['feat_optional',
-              ('KEY', 'SIGN'),
-          ('STRING', '"first second"')
-              ]
-             ),
-        ]
-
-        data = [(base_feature + feat_comp, desc, generate_expected_tree(base_expected_tree+[tree_comp]))
-                for desc, feat_comp, tree_comp in tests_inputs]
-
-        logging.debug(data)
-
-        for sample, info, expected in data:
-            with self.subTest(s=info):
+        for sample, info in ignored_token:
+            with self.subTest(sample=info):
                 tree = p.parse(sample)
-                logging.debug(sample)
                 logging.debug(tree)
                 logging.debug(tree.pretty())
 
-                self.assertEqual(expected, tree)
+                self.assertEqual(empty_tree, tree)
+
+    def test_parsed_elements(self):
+        """
+        Test the elements that populate the tree with values
+        :return: Nothing
+        """
+        # set_logging_level_to(logging.DEBUG)
+
+        # Defining the list of the parsed token
+        parsed_token = [
+            ('SERVER', 'server', 'Server'),
+            ('VENDOR', 'vendor', 'Vendor'),
+            ('FEATURE', 'feature', 'Feature')
+        ]
+
+        for sample, node, info in parsed_token:
+            with self.subTest(sample=info):
+                config = sample + ' ' + self.common_arguments
+                expected_tree = generate_expected_tree([node] + self.common_arguments_tree)
+
+                tree = p.parse(config)
+                logging.debug(tree)
+                logging.debug(tree.pretty())
+
+                self.assertEqual(expected_tree, tree)
 
 
 class TestTransformer(unittest.TestCase):
