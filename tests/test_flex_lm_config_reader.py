@@ -236,6 +236,38 @@ class TestTransformer(unittest.TestCase):
         # Key and string
         self.assertEqual((a_key, a_string), self.transformer.parameter([token_key, token_string]))
 
+    def test_build_args_from_list(self):
+        # set_logging_level_to(logging.DEBUG)
+
+        # Return one empty list an one empty dict if receiving nothing
+        args, kwargs = self.transformer.build_args_from_list([])
+        self.assertListEqual([], args, "ARGS not empty")
+        self.assertDictEqual(dict(), kwargs, "KWARGS not empty")
+
+        # Return list of values if no tuples
+        list_values = ["a", 1]
+        args, kwargs = self.transformer.build_args_from_list(list_values)
+        self.assertListEqual(list_values, args, "ARGS not corresponding")
+        self.assertDictEqual(dict(), kwargs, "KWARGS not empty")
+
+        # Return dictionary if no values
+        list_dict = [("a", 1), ("b", 2)]
+        args, kwargs = self.transformer.build_args_from_list(list_dict)
+        self.assertListEqual([], args, "ARGS not corresponding")
+        self.assertDictEqual(dict(list_dict), kwargs, "KWARGS not corresponding")
+
+        # Return liste of value and dictionary
+        mixed_list = list_values[:]
+        mixed_list.extend(list_dict)
+        args, kwargs = self.transformer.build_args_from_list(mixed_list)
+        self.assertListEqual(list_values, args, "ARGS not corresponding")
+        self.assertDictEqual(dict(list_dict), kwargs, "KWARGS not corresponding")
+
+
+        # Raise error if value follow tuple (value before is allowed)
+        with self.assertRaises(Exception):
+            self.transformer.build_args_from_list(["a", 1, ("k", "val"), 42])
+
 
     @unittest.skip("asserts TBD")
     def test_complete_config_file(self):

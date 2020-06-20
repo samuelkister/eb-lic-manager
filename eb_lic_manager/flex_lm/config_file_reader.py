@@ -107,6 +107,24 @@ class ConfigTransformer(Transformer):
 
         return self._factory.add_new_server(named_args, args)
 
+    def build_args_from_list(self, arguments):
+        args = []
+        kwargs = []
+
+        had_kwargs = False
+
+        for arg in arguments:
+            if isinstance(arg, tuple):
+                had_kwargs = True
+                kwargs.append(arg)
+            else:
+                if had_kwargs:
+                    raise SyntaxError("positional argument follows keyword argument")
+
+                args.append(arg)
+
+        return args, dict(kwargs)
+
 
 if __name__ == '__main__':
     pass
