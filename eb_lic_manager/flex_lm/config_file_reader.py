@@ -64,10 +64,10 @@ class ConfigTransformer(Transformer):
 
     def __init__(self, config_factory):
         super().__init__()
-        self._factory = config_factory
+        self._config_factory = config_factory
 
     def get_config(self):
-        self._factory.get_config()
+        self._config_factory.get_config()
 
     def build_param_from_tree(self, children):
         has_not_named_args = False
@@ -97,15 +97,9 @@ class ConfigTransformer(Transformer):
         return (key, value) if key else value
 
     def server(self, children):
-        named_args, args = self.build_args_from_list(children)
+        args, named_args = self.build_args_from_list(children)
 
-        for token in children:
-
-            fun = switcher.get(token.type)
-            if fun:
-                fun(server, token.value)
-
-        return self._factory.add_new_server(named_args, args)
+        return self._config_factory.add_new_server(*args, **named_args)
 
     def build_args_from_list(self, arguments):
         args = []

@@ -2,6 +2,7 @@
 import sys
 import unittest
 import logging
+from unittest.mock import MagicMock
 
 import eb_lic_manager.flex_lm.config_file_reader as p
 
@@ -208,7 +209,8 @@ class TestParser(unittest.TestCase):
 class TestTransformer(unittest.TestCase):
     def setUp(self) -> None:
         set_logging_level_to(STANDARD_LOGGING_LEVEL)
-        self.transformer = p.ConfigTransformer(None)
+        self.factory_mock = MagicMock()
+        self.transformer = p.ConfigTransformer(self.factory_mock)
 
     def test_argument_transformer(self):
         # set_logging_level_to(logging.DEBUG)
@@ -267,6 +269,11 @@ class TestTransformer(unittest.TestCase):
         # Raise error if value follow tuple (value before is allowed)
         with self.assertRaises(Exception):
             self.transformer.build_args_from_list(["a", 1, ("k", "val"), 42])
+
+    def test_server(self):
+        # TODO: mock the build_args_from_list to avoid wron results due to error into it
+        self.transformer.server(["a", 1, ("p1", "b"), ("p2", "2")])
+        self.factory_mock.add_new_server.assert_called_with("a", 1, p1="b", p2="2")
 
 
     @unittest.skip("asserts TBD")
