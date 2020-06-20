@@ -81,19 +81,20 @@ class ConfigTransformer(Transformer):
         #     if fun:
         #         fun(server, token.value)
 
-
     def parameter(self, children):
         key = None
         value = None
         for token in children:
             if token.type == "KEY":
-                key = token.value[:-2]
+                key = token.value[:-1]
             elif token.type == "STRING":
-                value = token.value[2:-2]
+                value = token.value[1:-1]
             elif token.type == "NON_STRING":
                 value = token.value
             else:
                 raise Exception("Unknown argument type")
+
+        return (key, value) if key else value
 
     def server(self, children):
         named_args, args = self.build_args_from_list(children)
@@ -105,20 +106,6 @@ class ConfigTransformer(Transformer):
                 fun(server, token.value)
 
         return self._factory.add_new_server(named_args, args)
-
-
-    # def vendor(self, child):
-    #     print("VENDOR: ")
-    #     print(child)
-    #
-    # def feature(self, child):
-    #     print("FEATURE: ")
-    #     print(child)
-    #
-    # def feat_optional(self, child):
-    #     print("FEATURE OPTIONAL: ")
-    #     print(child)
-    #     return "Feature optional"
 
 
 if __name__ == '__main__':
