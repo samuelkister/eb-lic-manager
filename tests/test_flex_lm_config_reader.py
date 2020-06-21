@@ -271,9 +271,9 @@ class TestTransformer(unittest.TestCase):
             self.transformer.build_args_from_list(["a", 1, ("k", "val"), 42])
 
     def test_server(self):
-        # TODO: mock the build_args_from_list to avoid wron results due to error into it
-        self.transformer.server(["a", 1, ("p1", "b"), ("p2", "2")])
-        self.factory_mock.add_new_server.assert_called_with("a", 1, p1="b", p2="2")
+        self.transformer.build_args_from_list = lambda x: (["a", 1], {"p1": "b", "p2": 2})
+        self.transformer.server(None)
+        self.factory_mock.add_new_server.assert_called_with("a", 1, p1="b", p2=2)
 
 
     @unittest.skip("asserts TBD")

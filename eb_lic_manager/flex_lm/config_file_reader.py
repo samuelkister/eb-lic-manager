@@ -69,18 +69,6 @@ class ConfigTransformer(Transformer):
     def get_config(self):
         self._config_factory.get_config()
 
-    def build_param_from_tree(self, children):
-        has_not_named_args = False
-        args = []
-        named_args = []
-
-        # for token in children:
-        #     if token.type() == "parameter":
-        #
-        #     fun = switcher.get(token.type)
-        #     if fun:
-        #         fun(server, token.value)
-
     def parameter(self, children):
         key = None
         value = None
